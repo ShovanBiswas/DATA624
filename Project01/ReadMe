@@ -1,1 +1,21 @@
+I uploaded the entire folder, which has the RMD, the input XL files and the output XL files.
+The list is as follows.
+total 2176
+-rw-r--r-- 1 ShovanBiswas 197121   26073 Oct 25 22:37 ShovanBiswas-DATA24_Project_01.Rmd
+-rw-r--r-- 1 ShovanBiswas 197121 1907306 Oct 25 22:38 ShovanBiswas-DATA24_Project_01.html
+
+
+-rw-r--r-- 1 ShovanBiswas 197121   40797 Oct 21 14:17 ATM624Data.xlsx
+-rw-r--r-- 1 ShovanBiswas 197121   45602 Oct 23 03:44 ATM624Data2.csv
+-rw-r--r-- 1 ShovanBiswas 197121    5117 Oct 25 22:37 ATM624Data2-Forecasts.csv
+
+-rw-r--r-- 1 ShovanBiswas 197121   14123 Oct 21 14:18 ResidentialCustomerForecastLoad-624.xlsx
+-rw-r--r-- 1 ShovanBiswas 197121    3758 Oct 25 22:38 ResidentialCustomerForecastLoad-624-Forecasts.xlsx
+
+-rw-r--r-- 1 ShovanBiswas 197121   39133 Oct 21 14:18 Waterflow_Pipe1.xlsx
+-rw-r--r-- 1 ShovanBiswas 197121   39861 Oct 25 21:44 Waterflow_Pipe1_mod.xlsx
+-rw-r--r-- 1 ShovanBiswas 197121   34453 Oct 21 14:19 Waterflow_Pipe2.xlsx
+-rw-r--r-- 1 ShovanBiswas 197121   36071 Oct 25 19:48 Waterflow_Pipe2_mod.xlsx
+-rw-r--r-- 1 ShovanBiswas 197121    8108 Oct 25 22:38 Waterflow_Pipe-Forecasts.xlsx
+
 
