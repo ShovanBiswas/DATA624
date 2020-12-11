@@ -1,1 +1,10 @@
+Files:
+-rw-r--r-- 1 ShovanBiswas 197121   30955 Dec 10 20:10  DATA624_Project_02.Rmd           // RMD
+-rw-r--r-- 1 ShovanBiswas 197121 1012304 Dec 10 20:03  DATA624_Project_02.pdf           // PDF
+-rw-r--r-- 1 ShovanBiswas 197121 2761687 Dec 10 20:19  DATA624_Project_02.html          // HTML
 
+-rw-rw-r--r-- 1 ShovanBiswas 197121  440446 Nov  6 20:34  StudentData.csv               // Input file
+-rw-r--r-- 1 ShovanBiswas 197121   44929 Nov 10 18:12  StudentEvaluation.csv            // Inpute file.
+-r--r-- 1 ShovanBiswas 197121   67792 Dec 10 20:19  PH_Result.csv                       // Output file.
+
+-rw-r--r-- 1 ShovanBiswas 197121  552547 Dec 10 20:02  Data624_Project2_Report.docx     // Report
