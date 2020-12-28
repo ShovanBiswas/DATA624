@@ -1,0 +1,258 @@
+---
+title: "ShovanBiswas-DATA24_Homework_04"
+author: "Shovan Biswas"
+date: "9/26/2020"
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    highlight: pygments
+    theme: cerulean
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries  
+
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(kableExtra)
+library(corrplot)
+library(reshape2)
+library(caret)
+library(Amelia)
+library(dlookr)
+```
+
+# Exercise 3.1  
+
+The UC Irvine Machine Learning Repository6 contains a data set related to glass identification. The data consist of 214 glass samples labeled as one of seven class categories. There are nine predictors, including the refractive index and percentages of eight elements: Na, Mg, Al, Si, K, Ca, Ba, and Fe.  
+
+The data can be accessed via:
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+library(mlbench)
+data(Glass)
+str(Glass)
+```
+
+(a) Using visualizations, explore the predictor variables to understand their distributions as well as the relationships between predictors.  
+
+
+Sanity check of Glass (prsence of null and NA):  
+
+```{r}
+any(is.null(Glass))
+```
+
+
+```{r}
+any(is.na(Glass))
+```
+
+Both are false, so there doesn't appear to be any missing values. In oder to be doubly sure, I did View(Glass) at the console -- looks good.  
+
+In the following, I'll use histograms, to understand distribution of predictor variables.  
+
+```{r}
+Glass_subset <- subset(Glass, select = -Type)
+predictors <- colnames(Glass_subset)
+```
+
+
+```{r}
+par(mfrow = c(3, 3))
+for(i in 1:9) {
+  hist(Glass_subset[,i], main = predictors[i], col = 3, xlab = "X-axis")
+}
+```
+There are high concentrations of Si (Silicon), Na (Sodium) and Al (Aluminium).
+
+
+To explore the relationships between the predictors, I'll find their correlations.  
+
+```{r}
+corrplot(cor(Glass[,1:9]), method="color", order="hclust", addCoef.col = "black", tl.col="black", tl.srt=45, diag=FALSE)
+```
+
+A total of $\binom{9}{2} = 36$ predictor-wise correlations are possible. Out of this, 26 are negative. Si has negative correlation with all other elements and nowhere too close to -1.  
+
+About 6 of the predictors (Si, RI, -0.54), (Al, Ba, 0.48), (Al, RI, -0.41), (Al, Mg, -0.48), (Ba, Mg, -0.49), (Ca, Mg, -0.44) are less in the neighborhood of 1 or -1. So, they are not too strong. Most of the others are even less strongly correlated.  
+
+Only (RI, Ca, 0.81) stands out as a relatively stronger correlation. So, I would think adding more Calcium increases the refractive index -- guessing.  
+
+However, this abstract (https://www.researchgate.net/publication/222625637_Hardness_and_Refractive_Index_of_Ca-Si-O-N_Glasses) says that there is no significant dependence on Ca content.  
+
+
+(b) Do there appear to be any outliers in the data? Are any predictors skewed?  
+
+Although the histograms give a clue, I'll run boxplot() function to be sure of outliers.  
+
+```{r}
+par(mfrow = c(3, 3))
+for(i in 1:9) {
+  boxplot(Glass_subset[,i], main = predictors[i], col = 4, horizontal = TRUE)
+}
+```
+
+Outliers: We observe that every predictor, except Mg has outlier.
+Skewed: The histogram in (a) tells us that Mg (with some bimodality), K, Ca, Ba and Fe are very skewed and Si is also slightly skewed.
+
+
+(c) Are there any relevant transformations of one or more predictors that might improve the classification model?  
+
+Yes, there are several transformations that could improve the classification model, which I'll state below:  
+
+- Transformation to resolve Skewness: If data is determined to be skewed (a thumb rule is if the ratio to highest value skewed data to lowest value is greater than 20), then replacing the data with log, square or inverse might help remove the skew. Alternatively, Box and Cox propose a set of transformations (known as Box-Cox transformations) that are indexed by a parameter $\lambda$. If $\lambda = 0$, then  $log(x)$,  else  $x^{*} = \frac{x^{\lambda}-1}{\lambda}$. In addition to log transformation, this set of transformation can identify square transformation $\lambda = 2$, square root $\lambda = 0.5$ and inverse $\lambda = -1$ and others in between.
+
+- Transformation to resolve Outliers: There several predictive models that are resistant to outliers. So, if a model is considered sensitive to outliers, then the transformation, called Spatial Sign can reduce the problem. In this scheme, the predictor data is centered and scaled before transforming. The predictor values are projected onto an n-dimensional sphere. So, all the data are at the same distance from the center.  
+
+- Data Reduction: This method reduces the number of predictors to a smaller set of predictors that seek to capture the majority of information in the original set of variables.  
+
+- Missing values: Outliers could occur, because intermediate values bridging the outliers to the center of gravity, could be missing. If values are missing, the first round of analysis should be to try to diagnose why the data are missing. Missing data could be imputed -- very popular imputation is KNN Imputation.
+
+
+# Exercise 3.2  
+
+The soybean data can also be found at the UC Irvine Machine Learning Repository. Data were collected to predict disease in 683 soybeans. The 35 predictors are mostly categorical and include information on the environmental conditions (e.g., temperature, precipitation) and plant conditions (e.g., left spots, mold growth). The outcome labels consist of 19 distinct classes.  
+
+The data can be loaded via:
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+data(Soybean)
+```
+
+(a) Investigate the frequency distributions for the categorical predictors. Are any of the distributions degenerate in the ways discussed earlier in this chapter?  
+
+Sanity check of Soybean (prsence of null and NA):  
+```{r}
+dim(Soybean)
+```
+
+```{r}
+any(is.null(Soybean))
+```
+
+
+```{r}
+any(is.na(Soybean))
+```
+
+Fact: There are no null values, but there are missing values.  
+
+
+Frequency distribution for the significant predictors are shown below:  
+```{r}
+Soybean_subset <- subset(Soybean, select = -c(Class, date))
+predictors <- colnames(Soybean_subset)
+```
+
+
+```{r}
+par(mfrow = c(3, 3))
+for(i in 1:34) {
+  hist(as.numeric(Soybean_subset[,i]), main = predictors[i], col = 3, xlab = "X-axis")
+}
+```
+
+To determine the degenracy of the distributions, I'll use the thumb rule for detecting *near-zero variance* predictors on page 44 of *Applied Predictive Modeling*. The thumb rules are:  
+
+- The fraction of unique values over the sample size is low (say 10%).  
+- The ratio of the frequency of the most prevalent value to the frequency of the second most prevalent value is large (say around 20).  
+
+If both of the above thumb rules are true, it may be advantageous to remove the variable from the model.  
+
+I'll use function nearZeroVAr() (of package Caret) to detect the degenerate cases and then verify them.    
+```{r}
+names(Soybean)[caret::nearZeroVar(Soybean)]
+```
+```{r}
+
+```
+
+Verification of leaf.mild:  
+```{r}
+summary(Soybean$leaf.mild)
+```
+
+We observe that leaf.mild has 3 unique values 0, 1 & 2. Therefore, the fraction of unique values is: (3 / 683) x 100 = 0.43 % < 10 %. So, leaf.mild satisfies thumb rule 1.  
+We also observe that the most frequent value is 0, which occurs 535 times. The next highest frequency is 20. Therefore, the ratio is: 535 / 20 = 26.75 > 20. So, leaf.mild satisfies thumb rule 2.  
+
+Verification of mycelium:  
+```{r}
+summary(Soybean$mycelium)
+```
+
+We observe that mycelium has 2 unique values 0 & 1. Therefore, the fraction of unique values is: (2 / 683) x 100 = 0.29 % < 10 %. So, mycelium satisfies thumb rule 1.  
+We also observe that the most frequent value is 0, which occurs 639 times. The next highest frequency is 6. Therefore, the ratio is: 639 / 6 = 106.5 > 20. So, mycelium satisfies thumb rule 2.  
+
+Verification of sclerotia:  
+```{r}
+summary(Soybean$sclerotia)
+```
+
+We observe that sclerotia has 2 unique values 0 & 1. Therefore, the fraction of unique values is: (2 / 683) x 100 = 0.29 % < 10 %. So, sclerotia satisfies thumb rule 1.  
+We also observe that the most frequent value is 0, which occurs 625 times. The next highest frequency is 20. Therefore, the ratio is: 625 / 20 = 31.25 > 20. So, sclerotia satisfies thumb rule 2.  
+
+
+(b) Roughly 18% of the data are missing. Are there particular predictors that are more likely to be missing? Is the pattern of missing data related to the classes?  
+
+Here's a sorted list of predictors having missing data. The top ones have more missing data. I would think these predictors are more likely to be missing.  
+```{r}
+sort(Soybean[-1] %>% apply(2, is.na) %>% apply(2, sum, na.rm=T), decreasing=TRUE)
+```
+
+
+
+The following table answers the second question *Is the pattern of missing data related to the classes?*. There are missing data related to classes and the top five of them are shown here.  
+```{r}
+Soybean$na_count <- apply(Soybean, 1, function(x) sum(is.na(x)))
+(Soybean %>% select(Class, na_count) %>% group_by(Class) %>% summarise(na_count = sum(na_count)) %>% arrange(desc(na_count)))
+```
+
+(c) Develop a strategy for handling missing data, either by eliminating predictors or imputation.  
+
+In order to handle missing data, I'll remove the three nearzero predictors and impute values for the rest of the predictors. For this reason, *dlookr* package was installed and enlisted in the libraries at the begining of this RMD.  
+```{r message=FALSE, warning=FALSE}
+Soybean_complete <- Soybean %>%
+  mutate(
+    date = imputate_na(Soybean, date, Class, method = "rpart", no_attrs = TRUE),
+    plant.stand = imputate_na(Soybean, plant.stand, Class, method = "rpart", no_attrs = TRUE),
+    precip = imputate_na(Soybean, precip, Class, method = "rpart", no_attrs = TRUE),
+    temp = imputate_na(Soybean, temp, Class, method = "rpart", no_attrs = TRUE),
+    hail = imputate_na(Soybean, hail, Class, method = "rpart", no_attrs = TRUE),
+    crop.hist = imputate_na(Soybean, crop.hist, Class, method = "rpart", no_attrs = TRUE),
+    area.dam = imputate_na(Soybean, area.dam, Class, method = "rpart", no_attrs = TRUE),
+    sever = imputate_na(Soybean, sever, Class, method = "rpart", no_attrs = TRUE),
+    seed.tmt = imputate_na(Soybean, seed.tmt, Class, method = "rpart", no_attrs = TRUE),
+    germ = imputate_na(Soybean, germ, Class, method = "rpart", no_attrs = TRUE),
+    plant.growth = imputate_na(Soybean, plant.growth, Class, method = "rpart", no_attrs = TRUE),
+    leaf.halo = imputate_na(Soybean, leaf.halo, Class, method = "rpart", no_attrs = TRUE),
+    leaf.marg = imputate_na(Soybean, leaf.marg, Class, method = "rpart", no_attrs = TRUE),
+    leaf.size = imputate_na(Soybean, leaf.size, Class, method = "rpart", no_attrs = TRUE),
+    leaf.shread = imputate_na(Soybean, leaf.shread, Class, method = "rpart", no_attrs = TRUE),
+    leaf.malf = imputate_na(Soybean, leaf.malf, Class, method = "rpart", no_attrs = TRUE),
+    stem = imputate_na(Soybean, stem, Class, method = "rpart", no_attrs = TRUE),
+    lodging = imputate_na(Soybean, lodging, Class, method = "rpart", no_attrs = TRUE),
+    stem.cankers = imputate_na(Soybean, stem.cankers, Class, method = "rpart", no_attrs = TRUE),
+    canker.lesion = imputate_na(Soybean, canker.lesion, Class, method = "rpart", no_attrs = TRUE),
+    fruiting.bodies = imputate_na(Soybean, fruiting.bodies, Class, method = "rpart", no_attrs = TRUE),
+    ext.decay = imputate_na(Soybean, ext.decay, Class, method = "rpart", no_attrs = TRUE),
+    int.discolor = imputate_na(Soybean, int.discolor, Class, method = "rpart", no_attrs = TRUE),
+    fruit.pods = imputate_na(Soybean, fruit.pods, Class, method = "rpart", no_attrs = TRUE),
+    seed = imputate_na(Soybean, seed, Class, method = "rpart", no_attrs = TRUE),
+    mold.growth = imputate_na(Soybean, mold.growth, Class, method = "rpart", no_attrs = TRUE),
+    seed.discolor = imputate_na(Soybean, seed.discolor, Class, method = "rpart", no_attrs = TRUE),
+    seed.size = imputate_na(Soybean, seed.size, Class, method = "rpart", no_attrs = TRUE),
+    shriveling = imputate_na(Soybean, shriveling, Class, method = "rpart", no_attrs = TRUE),
+    fruit.spots = imputate_na(Soybean, fruit.spots, Class, method = "rpart", no_attrs = TRUE),
+    roots = imputate_na(Soybean, roots, Class, method = "rpart", no_attrs = TRUE)) %>%
+  select(-leaf.mild, -mycelium, -sclerotia) 
+```
+
+Now, I'll check the effect of the ellimination.  
+```{r}
+Soybean_complete %>% arrange(Class) %>% missmap(main = "Missing / Observed")
+```
+
+So, there are no missing observations.  
