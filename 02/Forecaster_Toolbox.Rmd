@@ -1,0 +1,140 @@
+---
+title: 'Forecaster Toolbox'
+author: 'Shovan Biswas'
+date: '2020/9/12'
+output:
+# rmdformats::readthedown
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries  
+
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+library(gridExtra)
+library(fpp2)
+library(readxl)
+```
+
+# Exercise 3.1 
+
+For the following series, find an appropriate Box-Cox transformation in order to stabilise the variance.  
+
+Since there are four items, I created a loop to contrast the original with the Box-Cox transformation of the data.
+
+```{r}
+boxcox_trans_loop <- function(item, title){
+  lambda <- BoxCox.lambda(item)
+  Visulization1 <- autoplot(item) + ggtitle("Original") + ylab(title) + theme(axis.title.x = element_blank())
+  Visulization2 <- autoplot(BoxCox(item, lambda)) + ggtitle(paste0("Box-Cox Transformed (lambda=", round(lambda, 4),")")) + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+  grid.arrange(Visulization1, Visulization2, ncol = 2)
+}
+```
+
+
+## usnetelec
+
+```{r}
+boxcox_trans_loop(usnetelec, "usnetelec - Box-Cox transformed")
+```
+
+## usgdp
+
+```{r}
+boxcox_trans_loop(usgdp, "usgdp - Box-Cox transformed")
+```
+
+## mcopper
+
+```{r}
+boxcox_trans_loop(mcopper, "mcopper - Box-Cox transformed")
+```
+
+## enplanements
+
+```{r}
+boxcox_trans_loop(enplanements, "enplanements - Box-Cox transformed")
+```
+
+# Exercise 3.2
+
+Why is a Box-Cox transformation unhelpful for the `cangas` data?
+
+```{r}
+boxcox_trans_loop(cangas, "cangas -  - Box-Cox transformed")
+```
+
+
+In above plot, we see that seasonal variability remains largely same thoughout the years, where variability increased after 1975 and reduced after 1990.  
+
+So to stabilise the variance, the transformation will need to “stretch” the seasonal variability before 1975; “shrink” the variability between 1975 and 1985; and then again “stretch” the variability after 1990.  
+
+# Exercise 3.3
+
+What Box-Cox transformation would you select for your `retail` data?
+
+```{r}
+retaildata <- read_excel("retail.xlsx", skip = 1)
+myts <- ts(retaildata[, "A3349398A"], frequency = 12, start = c(1982, 4))
+# myts <- ts(retaildata[, "A3349709X"], frequency = 12, start = c(1982, 4))
+# myts <- ts(retaildata[, "A3349413L"], frequency = 12, start = c(1982, 4))
+# myts <- ts(retaildata[, "A3349335T"], frequency = 12, start = c(1982, 4))
+# myts <- ts(retaildata[, "A3349627V"], frequency = 12, start = c(1982, 4))
+# myts <- ts(retaildata[, "A3349338X"], frequency = 12, start = c(1982, 4))
+# myts <- ts(retaildata[, "A3349398A"], frequency = 12, start = c(1982, 4))
+boxcox_trans_loop(myts, "Retail Sales")
+```
+
+In the original data, variance increased from 1990 to 2010+. But, in Box-cox transformed data, variance seems to have become uniform. The value for Lambda is .1232. So, this transformation appears to be effective.
+
+# Exercise 3.8
+
+For your `retail` time series:
+
+a) Split the data into two parts using
+```{r}
+myts.train <- window(myts, end = c(2010, 12))
+myts.test <- window(myts, start = 2011)
+```
+
+b) Check that your data have been split appropriately by producing the following plot.
+
+```{r}
+autoplot(myts) +
+  autolayer(myts.train, series = "Training") +
+  autolayer(myts.test, series = "Test")
+```
+
+c) Calculate forecasts using `snaive` applied to `myts.train`.
+
+```{r}
+fc <- snaive(myts.train)
+```
+
+d) Compare the accuracy of your forecasts against the actual values stored in `myts.test`.
+
+```{r}
+accuracy(fc, myts.test)
+```
+
+e) Check the residuals.
+
+```{r}
+checkresiduals(fc)
+```
+
+Do the residuals appear to be uncorrelated and normally distributed?
+
+Yes, the residuals seem to be normally distributed but with a bit of a positve skew. The residuals don't appear to be uncorrelated. The Ljung-Box test shows a p value of that less than 0.05, which suggests incomplete information, and therefore the seasonal naive model is not reliable model.  
+
+f) How sensitive are the accuracy measures to the training/test split?
+
+The accuracy measures are quite sensitive to the training/test split. The values are significantly different between the two. Probably the model doesn't generalize well.  
+
+Marker: 624-01
