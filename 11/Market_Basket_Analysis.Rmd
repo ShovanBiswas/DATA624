@@ -1,0 +1,165 @@
+---
+title: 'Market Basket Analysis'
+author: 'Shovan Biswas'
+date: '2020/11/30'
+output:
+# rmdformats::readthedown
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# knitr::opts_chunk$set(fig.width = 8, fig.height = 8) 
+```
+
+# Libraries  
+
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(corrplot)
+library(reshape2)
+library(Amelia)
+library(dlookr)
+library(fpp2)
+library(plotly)
+library(gridExtra)
+library(readxl)
+library(ggplot2)
+library(urca)
+library(tseries)
+library(AppliedPredictiveModeling)
+library(RANN)
+library(psych)
+library(e1071)
+library(corrplot)
+library(glmnet)
+library(mlbench)
+library(caret)
+library(earth)
+library(randomForest)
+library(party)
+library(Cubist)
+library(gbm)
+library(rpart)
+library(dplyr)
+library(arulesViz)
+library(igraph)
+```
+
+# Problem statement      
+
+Imagine 10000 receipts sitting on your table. Each receipt represents a transaction with items that were purchased. The receipt is a representation of stuff that went into a customer’s basket - and therefore "Market Basket Analysis".     
+
+That is exactly what the Groceries Data Set contains: a collection of receipts with each line representing 1 receipt and the items purchased. Each line is called a transaction and each column in a row represents an item.  The data set is attached.      
+
+Your assignment is to use R to mine the data for association rules. You should report support, confidence and lift and your top 10 rules by lift.       
+
+Extra credit: do a simple cluster analysis on the data as well.  Use whichever packages you like.  Due May 3 before midnight.      
+
+# Brief explanation               
+
+Initially, I proceeded to read with read_csv. Although I was able to read the usual csv file (GroceryDataSet.csv i.e.), it didn't help in down stream analysis. So, in order to mine the data for **Association Rules**, I googled and learned that apriori() function was required. This is not something, which we customarily use or have used so in the past. On googling, I hit upon the following page:        
+
+    https://blog.aptitive.com/building-the-transactions-class-for-association-rule-mining-in-r-using-arules-and-apriori-c6be64268bc4                     
+
+The page gives an overview of transactions class, apriori() functions etc. The package arules is required, which I added to the list of libraries above. "Market Basket Analysis" was a good clue.          
+Explanation of some of the terms in Association Rules, which we'll encounter below:          
+
+Support of a set of items is the frequency with which, an item appears in the dataset.        
+
+Confidence of a rule is the frequency of how often a rule has been found to be true.       
+
+Lift is the ratio of the actual support to the expected support.        
+
+# Reading data and summary               
+
+
+```{r}
+# grocery_transactions <- read_csv('./GroceryDataSet.csv')
+grocery_transactions <- read.transactions('./GroceryDataSet.csv', sep = ",")
+```
+
+```{r}
+summary(grocery_transactions)
+```
+
+From summary, we see that some of the most freuent items are "whole milk", "other vegetables", "rolls/buns", "soda" etc. In order to get a better visualization, I'll use function itemFrequencyPlot().      
+
+# Frequency of top 20 most frequent items                
+
+```{r}
+itemFrequencyPlot(grocery_transactions, topN = 20, type = "absolute", main = "Top 20 Items")
+```
+
+This graph gives an idea of frequencies of top 20 most frequent items. This graph corroborate the few observations in summary.                
+
+
+# Further analysis                              
+
+Now, I'll use apriori() function, for "Market Basket Analysis". I explored apriori() function, by varying the values of the parameters, **support** and **confidence**. With some combinations, I didn't get any results at all -- simply errored out. With support = 0.001, confidence = 0.4, in descending order of lift, I got a table (shown down below).       
+
+```{r}
+support <- 0.001
+confidence <- 0.4
+rules <- apriori(grocery_transactions, parameter = list(support = support, confidence = confidence), control = list(verbose = FALSE))
+```
+
+```{r}
+summary(rules)
+```
+
+An important observation in summary is, there 8955 rules with length from 2 to 6.       
+
+In the following, I'll display the top 10 rules with their support and confidence, sorted descending order of lift.        
+
+```{r}
+rules %>% DATAFRAME() %>% arrange(desc(lift)) %>% top_n(10) %>% kable()
+```
+
+What is this table telling us? The rule having the greatest lift (2.246605), is for the item **{other vegetables}**, after purchase of **{root vegetables}**. The support and confidence of the item are 0.04738180 and 0.4347015 respectively.        
+
+
+The following graph gives a good visualization of how the items are associating.           
+
+```{r}
+subrules <- head(rules, n = 10, by = 'lift')
+plot(subrules, method = 'graph')
+```
+
+# Cluster analysis                      
+
+In order to do cluster analysis, groupings must be identified. After creating a network graph from the given data, I'll use cluster_louvain() to 
+
+```{r}
+grocery_csv <- read.csv("GroceryDataSet.csv", header = FALSE) %>% mutate(shoper_id = row_number()) %>% pivot_longer(-shoper_id) %>% filter(value != "") %>% select(-name)
+
+communities <- grocery_csv %>% rename(to = value, from = shoper_id) %>% graph_from_data_frame(directed = FALSE) %>% cluster_louvain() %>% communities()
+```
+
+The following step will associate customers and items to 19 clusters.       
+
+```{r}
+products <- as.character(unique(grocery_csv$value))
+
+df <- data.frame(name = c(NA), members = c(NA)) %>% na.omit() # create data frame
+
+for (i in 1:length(communities)){
+  cluster_name <- paste0(i,": ")
+  cluster_members <- 0
+  for (member in communities[[i]]){
+    if (member %in% products){
+      cluster_name <- paste0(cluster_name, member, " + ")
+    } else {
+      cluster_members <- cluster_members + 1
+    }
+  }
+  cluster_name <- substr(cluster_name,1,nchar(cluster_name)-3)
+  df <- rbind(df, data.frame(name = cluster_name, members = cluster_members))
+}
+  df %>%
+  arrange(desc(members)) %>% kable()
+```
+
+Marker: 624-11
