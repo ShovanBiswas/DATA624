@@ -1,9 +1,9 @@
 The list of files is as follows.
 
 RMD, HTML and PDF
--rw-r--r-- 1 ShovanBiswas 197121   26073 Oct 25 22:37 ShovanBiswas-DATA24_Project_01.Rmd
--rw-r--r-- 1 ShovanBiswas 197121 1907306 Oct 25 22:38 ShovanBiswas-DATA24_Project_01.html
--rw-r--r-- 1 ShovanBiswas 197121  821946 Oct 25 22:49 ShovanBiswas-DATA24_Project_01.pdf
+-rw-r--r-- 1 ShovanBiswas 197121 3069815 Dec 28 19:33 Forecasting_ATM_Residents_Water.html
+-rw-r--r-- 1 ShovanBiswas 197121  822416 Dec 28 19:38 Forecasting_ATM_Residents_Water.pdf
+-rw-r--r-- 1 ShovanBiswas 197121   26047 Dec 28 19:38 Forecasting_ATM_Residents_Water.Rmd
 
 Part-A:
 -rw-r--r-- 1 ShovanBiswas 197121   40797 Oct 21 14:17 ATM624Data.xlsx
